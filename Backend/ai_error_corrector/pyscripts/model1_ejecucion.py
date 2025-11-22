@@ -9,16 +9,30 @@ import numpy as np
 # --- 1. Definición del Modelo (Debe coincidir con el entrenamiento) ---
 # Se necesita la definición de la clase para cargar los pesos
 class FusionGRU(nn.Module):
+    """
+    Modelo GRU para la fusión y limpieza de sensores.
+    """
+
     def __init__(self, input_size, hidden_size, output_size, num_layers=2):
         super(FusionGRU, self).__init__()
         self.hidden_size = hidden_size
         self.num_layers = num_layers
+
+        # GRU procesa la secuencia de datos (IMU, Láser, GNSS)
         self.gru = nn.GRU(input_size, hidden_size, num_layers, batch_first=True)
+
+        # Capa lineal para mapear la salida de la GRU a las 14 variables deseadas
         self.fc = nn.Linear(hidden_size, output_size)
 
     def forward(self, x):
+        # Inicializar el estado oculto (h0)
         h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
+
+        # out: (batch_size, seq_len, hidden_size)
         out, _ = self.gru(x, h0)
+
+        # Tomar la salida del último paso de la secuencia y pasar por la capa lineal
+        out = self.fc(out[:, -1, :])
         return out
 
 
