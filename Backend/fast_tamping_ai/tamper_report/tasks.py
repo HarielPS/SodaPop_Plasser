@@ -93,7 +93,7 @@ from typing import List, Dict, Union
 # ==============================================================================
 
 # Se asume que los modelos y escaladores están en estas rutas relativas a donde se ejecute la API.
-MODELS_DIR = "C:/Users/jlflo/Documents/Hack_Austria/SodaPop_Plasser/Models/Tamping_detector/models"
+MODELS_DIR = BASE_DIR / "modelos"
 
 # Columnas base
 TIME_COL = "Time"
