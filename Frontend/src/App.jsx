@@ -1,12 +1,5 @@
-import React, { useState } from "react";
-import Login from "./pages/Login.jsx";
+import Dashboard from "./pages/Dashboard";
 
 export default function App() {
-  const [logged, setLogged] = useState(false);
-
-  return (
-    <div>
-      <Login onLogin={() => setLogged(true)} />
-    </div>
-  );
+  return <Dashboard />;
 }

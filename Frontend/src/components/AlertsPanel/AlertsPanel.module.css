@@ -1,0 +1,28 @@
+.panel {
+    background: #222;
+    padding: 20px;
+    border-radius: 10px;
+    color: white;
+    border: 2px solid #444;
+  }
+  
+  .title {
+    margin-bottom: 15px;
+    font-size: 18px;
+  }
+  
+  .alert {
+    background: #333;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #ffcc00;
+  }
+  
+  .btn {
+    margin-top: 10px;
+    padding: 7px 12px;
+    background: #ffcc00;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }

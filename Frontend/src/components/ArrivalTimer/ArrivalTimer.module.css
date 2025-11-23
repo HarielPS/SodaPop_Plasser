@@ -1,0 +1,12 @@
+.box {
+    background: #222;
+    padding: 20px;
+    border-radius: 10px;
+    border: 2px solid #444;
+    color: white;
+  }
+  
+  .time {
+    font-size: 28px;
+    color: #ffcc00;
+  }

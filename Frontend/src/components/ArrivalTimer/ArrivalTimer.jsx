@@ -1,0 +1,10 @@
+import styles from "./ArrivalTimer.module.css";
+
+export default function ArrivalTimer() {
+  return (
+    <div className={styles.box}>
+      <h3>Next Train</h3>
+      <p className={styles.time}>04:23</p>
+    </div>
+  );
+}
