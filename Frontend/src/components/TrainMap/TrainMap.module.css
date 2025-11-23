@@ -1,41 +1,56 @@
 .mapContainer {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-  }
-  
-  .title {
-    color: #ffcc00;
-    font-size: 20px;
-    font-weight: 600;
-  }
-  
-  .map {
-    height: 250px;
-    background: linear-gradient(135deg, #202020, #0d0d0d);
-    border: 2px solid #333;
-    border-radius: 12px;
-    position: relative;
-    overflow: hidden;
-  }
-  
-  /* Placeholder "tracks" */
-  .track {
-    height: 6px;
-    width: 100%;
-    background: #555;
-    position: absolute;
-    top: 50%;
-  }
-  
-  /* Placeholder train */
-  .train {
-    width: 30px;
-    height: 16px;
-    background: #ffcc00;
-    position: absolute;
-    top: calc(50% - 8px);
-    left: 20%;
-    border-radius: 4px;
-    box-shadow: 0 0 10px #ffcc00;
-  }
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.title {
+  color: #ffcc00;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.map {
+  height: 400px;
+  width: 100%;
+  background: #0d0d0d;
+  border: 2px solid #333;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Asegurar que el mapa de Leaflet ocupe todo el contenedor */
+.map :global(.leaflet-container) {
+  height: 100%;
+  width: 100%;
+  border-radius: 10px;
+}
+
+/* Personalizar los controles de Leaflet */
+.map :global(.leaflet-control-zoom) {
+  border: 2px solid #333 !important;
+  background: #202020 !important;
+}
+
+.map :global(.leaflet-control-zoom a) {
+  background: #202020 !important;
+  color: #ffcc00 !important;
+  border-bottom: 1px solid #333 !important;
+}
+
+.map :global(.leaflet-control-zoom a:hover) {
+  background: #2a2a2a !important;
+}
+
+/* Personalizar el popup */
+.map :global(.leaflet-popup-content-wrapper) {
+  background: #202020;
+  color: #ffcc00;
+  border: 1px solid #333;
+  border-radius: 8px;
+}
+
+.map :global(.leaflet-popup-tip) {
+  background: #202020;
+}
