@@ -37,7 +37,7 @@ class Route(models.Model):
     )
 
     def __str__(self):
-        return f"{self.route_code}: {self.origin.code} → {self.destination.code}"
+        return f"{self.route_code}: {self.origin.name} → {self.destination.name}"
 
 class TrainTrip(models.Model):
     train = models.ForeignKey(Train, on_delete=models.CASCADE)
@@ -50,7 +50,7 @@ class TrainTrip(models.Model):
     arrival_time = models.DateTimeField()
 
     def __str__(self):
-        return f"{self.train.name} Trip on {self.route.route_code} ({self.departure_time.date()})"
+        return f"{self.train.id} Trip on {self.route.route_code} ({self.departure_time.date()})"
 
 class ReportBatch(models.Model):
     train_trip = models.OneToOneField(TrainTrip, on_delete=models.CASCADE)
@@ -85,7 +85,7 @@ class Report(models.Model):
     state = models.IntegerField(choices=STATE_CHOICES, default=1)
 
     def __str__(self):
-        return f"Report on route {self.train_trip.route.route_code} | Lift: {self.lift_mm} mm"
+        return f"Report on route {self.report_batch.train_trip.route} | Lift: {self.lift_mm} mm"
     
 class TamperMachine(models.Model):
 

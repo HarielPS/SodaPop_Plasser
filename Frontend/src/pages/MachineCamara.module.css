@@ -1,0 +1,48 @@
+.container {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+  background: #0d0d0d;
+}
+
+.main {
+  flex: 1;
+  padding: 20px;
+  color: white;
+}
+
+.title {
+  font-size: 22px;
+  margin-bottom: 20px;
+  color: #ffcc00;
+}
+
+/* Grid de cámaras */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 25px;
+}
+
+/* Tarjeta de cámara */
+.cameraCard {
+  background: #1a1a1a;
+  padding: 15px;
+  border-radius: 10px;
+  border: 1px solid #333;
+}
+
+.camTitle {
+  margin-bottom: 10px;
+  font-size: 18px;
+  color: #ffcc00;
+}
+
+/* Video */
+.video {
+  width: 100%;
+  height: 240px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #444;
+}

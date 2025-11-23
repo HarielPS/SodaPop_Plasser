@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import AdminPanel from "./pages/AdminPanel";
 import DiagnosticsHistory from "./pages/DiagnosticsHistory";
+import TrainCameras from "./pages/MachineCameras";
 
 export default function App() {
   const [role, setRole] = useState(null);
@@ -42,6 +43,11 @@ export default function App() {
           <Route
             path="/dashboard"
             element={<Dashboard user={currentUser} />}
+          />
+
+          <Route
+            path="/train-cameras"
+            element={<TrainCameras user={currentUser} />}
           />
 
           <Route

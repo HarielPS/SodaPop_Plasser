@@ -38,18 +38,12 @@ class TrainSerializer(serializers.ModelSerializer):
         fields = ['id','model','weight','max_speed','train_type','manufacturer','year_built']
 
 class RouteSerializer(serializers.ModelSerializer):
-    origin = StationSerializer(read_only=True)
-    destination = StationSerializer(read_only=True)
-
     class Meta:
         model = Route
         fields = ['id', 'route_code', 'origin', 'destination']
 
 
 class TrainTripSerializer(serializers.ModelSerializer):
-    train = TrainSerializer(read_only=True)
-    route = RouteSerializer(read_only=True)
-
     class Meta:
         model = TrainTrip
         fields = [
@@ -58,28 +52,82 @@ class TrainTripSerializer(serializers.ModelSerializer):
             'departure_time', 'arrival_time'
         ]
 
-class ReportBatchSerializer(serializers.ModelSerializer):
-    train_trip = TrainTripSerializer(read_only=True)
-
-    class Meta:
-        model = ReportBatch
-        fields = ['id', 'train_trip', 'created_at']
-
-class ReportSerializer(serializers.ModelSerializer):
-    report_batch = serializers.PrimaryKeyRelatedField(
-        queryset=ReportBatch.objects.all()
-    )
-
+class ReportCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Report
         fields = [
-            'id', 'report_batch',
-            'start_latitude', 'start_longitude',
-            'end_latitude', 'end_longitude',
-            'lift_left_mm', 'lift_right_mm',
-            'date_reported', 'date_fixed',
-            'state'
+            "start_latitude", "start_longitude",
+            "end_latitude", "end_longitude",
+            "lift_mm",
+            "adjustment_left_mm", "adjustment_right_mm",
+            "state",
         ]
+        extra_kwargs = {
+            "state": {"required": False},  
+        }
+
+class ReportBatchCreateSerializer(serializers.Serializer):
+    train_trip = serializers.IntegerField()
+    reports = ReportCreateSerializer(many=True)
+
+    def create(self, validated_data):
+        train_trip_id = validated_data["train_trip"]
+        reports_data = validated_data["reports"]
+
+        train_trip = TrainTrip.objects.get(id=train_trip_id)
+
+        batch = ReportBatch.objects.create(train_trip=train_trip)
+
+        report_objects = [
+            Report(
+                report_batch=batch,
+                **report_data
+            )
+            for report_data in reports_data
+        ]
+        Report.objects.bulk_create(report_objects)
+
+        return batch
+
+class ReportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Report
+        fields = [
+            "id",
+            "start_latitude", "start_longitude",
+            "end_latitude", "end_longitude",
+            "lift_mm",
+            "adjustment_left_mm", "adjustment_right_mm",
+            "state",
+            "date_reported",
+            "date_fixed",
+        ]
+
+class ReportBatchSerializer(serializers.ModelSerializer):
+    train_trip = TrainTripSerializer(read_only=True)
+    reports = ReportSerializer(source="report_set", many=True)
+
+    class Meta:
+        model = ReportBatch
+        fields = [
+            "id",
+            "created_at",
+            "train_trip",
+            "reports",
+        ]
+
+
+class ReportUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Report
+        fields = ["state", "date_fixed"]
+
+        extra_kwargs = {
+            "state": {"required": True},
+            "date_fixed": {"required": False},
+        }
+
+
 
 class TamperMachineSerializer(serializers.ModelSerializer):
     class Meta:
@@ -87,10 +135,6 @@ class TamperMachineSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class TamperOperationSerializer(serializers.ModelSerializer):
-    tamper = TamperMachineSerializer(read_only=True)
-    report_batch = ReportBatchSerializer(read_only=True)
-    operator = UserSerializer(read_only=True)
-
     class Meta:
         model = TamperOperation
         fields = [
