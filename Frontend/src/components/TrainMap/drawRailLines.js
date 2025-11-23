@@ -2,7 +2,9 @@
 import L from "leaflet";
 
 /**
- * Dibuja las líneas de las vías en 3 segmentos y devuelve la ruta del tren (línea 1)
+ * Dibuja las líneas de las vías en 3 segmentos y devuelve:
+ * - lineSegments: array con la ruta completa de cada línea
+ * - bounds: límites globales para fitBounds
  */
 export function drawRailLines({
   map,
@@ -20,7 +22,7 @@ export function drawRailLines({
     "#7CFC00", // Línea 3
   ];
 
-  let trainPath = null;
+  const lineSegments = [];
   let globalBounds = L.latLngBounds([]);
 
   for (let line = 0; line < numLines; line++) {
@@ -33,7 +35,7 @@ export function drawRailLines({
 
     const color = lineColors[line];
 
-    // Sombra gruesa
+    // Polyline gruesa (sombreada)
     const shaded = L.polyline(segment, {
       color,
       weight: 16,
@@ -41,7 +43,7 @@ export function drawRailLines({
       lineCap: "round"
     }).addTo(layerGroup);
 
-    // Línea fina encima
+    // Polyline fina encima
     L.polyline(segment, {
       color,
       weight: 4,
@@ -51,24 +53,21 @@ export function drawRailLines({
 
     globalBounds.extend(shaded.getBounds());
 
-    // Estación inicio
+    // Marcadores inicio/fin
     L.marker(segment[0], { icon: stationIcon })
       .bindPopup(`🚉 Inicio línea ${line + 1}`)
       .addTo(layerGroup);
 
-    // Estación fin
     L.marker(segment[segment.length - 1], { icon: stationIcon })
       .bindPopup(`🚉 Fin línea ${line + 1}`)
       .addTo(layerGroup);
 
-    // Guardar ruta del tren (línea 1)
-    if (line === 0) {
-      trainPath = segment;
-    }
+    // Guardar segmento para simulación
+    lineSegments[line] = segment;
   }
 
   return {
-    trainPath,
+    lineSegments,
     bounds: globalBounds
   };
 }

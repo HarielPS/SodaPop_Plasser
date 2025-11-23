@@ -1,22 +1,21 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import styles from "./TrainMap.module.css";
 
-// Lógica externa
-import { animateTrainOnPath } from "./animateTrain";
 import { drawRailLines } from "./drawRailLines";
+import { scheduleSimulation, clearSimulation } from "./scheduleSimulation";
 
 export default function TrainMap() {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const routeLayerRef = useRef(null);
 
-  const trainMarkerRef = useRef(null);
-  const trainAnimationRef = useRef(null);
+  // Para poder limpiar animaciones (trenes + tamping)
+  const simulationRegistryRef = useRef(null);
 
   useEffect(() => {
-    // Crear mapa
+    // Crear mapa solo una vez
     if (!mapInstanceRef.current && mapRef.current) {
       mapInstanceRef.current = L.map(mapRef.current, {
         center: [45.0, 10.0],
@@ -30,14 +29,14 @@ export default function TrainMap() {
       ).addTo(mapInstanceRef.current);
     }
 
-    // Crear capa
+    // Crear / limpiar capa de rutas
     if (routeLayerRef.current) {
       mapInstanceRef.current.removeLayer(routeLayerRef.current);
     }
     routeLayerRef.current = L.layerGroup().addTo(mapInstanceRef.current);
 
-    // ============ LEER CSV ============
-    fetch("/resources/datos_limpios_modelo1_output.csv")
+    // ============ LEER CSV DE VÍAS ============
+    fetch("/resources/datos_inspeccion_vias.csv")
       .then((res) => res.text())
       .then((text) => {
         const rows = text.trim().split("\n");
@@ -45,6 +44,11 @@ export default function TrainMap() {
 
         const latIdx = header.indexOf("Lat_caro");
         const lonIdx = header.indexOf("Lon_caro");
+
+        if (latIdx === -1 || lonIdx === -1) {
+          console.error("No existe Lat_caro / Lon_caro en el CSV");
+          return;
+        }
 
         const latlngs = [];
         for (let i = 1; i < rows.length; i++) {
@@ -70,32 +74,43 @@ export default function TrainMap() {
           iconAnchor: [8, 8],
         });
 
-        // ======= 🎨 DIBUJAR LÍNEAS ESTILIZADAS =======
-        const { trainPath, bounds } = drawRailLines({
+        // ----- Dibujar las 3 líneas y obtener segmentos + bounds
+        const { lineSegments, bounds } = drawRailLines({
           map: mapInstanceRef.current,
           layerGroup: routeLayerRef.current,
           latlngs,
-          stationIcon
+          stationIcon,
         });
 
-        // ======= 🚄 ANIMAR TREN =======
-        animateTrainOnPath({
-          map: mapInstanceRef.current,
-          layerGroup: routeLayerRef.current,
-          path: trainPath,
-          totalDuration: 20000,
-          trainMarkerRef,
-          trainAnimationRef,
-        });
-
-        // Ajustar vista
         if (bounds.isValid()) {
           mapInstanceRef.current.fitBounds(bounds, { padding: [40, 40] });
         }
-      });
 
+        // ============ LEER JSON DE HORARIOS Y SIMULAR ============
+        fetch("/resources/trains_schedule.json")
+          .then((r) => r.json())
+          .then((schedule) => {
+            scheduleSimulation({
+              map: mapInstanceRef.current,
+              layerGroup: routeLayerRef.current,
+              lineSegments,
+              schedule,
+              registryRef: simulationRegistryRef,
+            });
+          })
+          .catch((err) =>
+            console.error("Error cargando trains_schedule.json", err)
+          );
+      })
+      .catch((err) =>
+        console.error("Error cargando datos_inspeccion_vias.csv", err)
+      );
+
+    // Cleanup al desmontar
     return () => {
-      if (trainAnimationRef.current) clearInterval(trainAnimationRef.current);
+      if (routeLayerRef.current) {
+        clearSimulation(simulationRegistryRef, routeLayerRef.current);
+      }
     };
   }, []);
 

@@ -12,7 +12,8 @@
       "id": "TM-1",
       "line": 1,
       "departureSec": 20,
-      "targetIndex": 1400,
+      "targetLat": 19.4326,
+      "targetLon": -99.1332,
       "travelTimeToTargetSec": 120,
       "dwellTimeSec": 60,
       "returnToBase": true
@@ -21,7 +22,8 @@
       "id": "TM-2",
       "line": 2,
       "departureSec": 80,
-      "targetIndex": 900,
+      "targetLat": 19.40,
+      "targetLon": -99.17,
       "travelTimeToTargetSec": 90,
       "dwellTimeSec": 45,
       "returnToBase": false
