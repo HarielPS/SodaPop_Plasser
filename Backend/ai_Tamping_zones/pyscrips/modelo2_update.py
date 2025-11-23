@@ -16,17 +16,18 @@ import torch.optim as optim
 # 1. Rutas
 # ===========================
 # CSV NUEVO con etiquetas reales (o refinadas)
-NEW_STATE_CSV = "Backend/ai_Tamping_zones/datasets/estado_nueva_medicion_etiquetada.csv"
+# CSV NUEVO que quieres probar y etiquetar
+NEW_STATE_CSV = "../datasets/estado_nueva_medicion_etiquetada.csv"
 
 # Modelo base que ya entrenaste antes
-BASE_MODEL_PATH = "Backend/ai_Tamping_zones/models/modelo2_tamping.pt"
+BASE_MODEL_PATH = "../models/modelo2_tamping.pt"
 
 # Dónde guardar el modelo actualizado
-UPDATED_MODEL_PATH = "Backend/ai_Tamping_zones/models/modelo2_tamping_actualizado.pt"
+UPDATED_MODEL_PATH = "../models/modelo2_tamping_actualizado.pt"
 
 # Opcional: resultados
-OUTPUT_CSV  = "Backend/ai_Tamping_zones/results/estado_nueva_medicion_con_pred_update.csv"
-OUTPUT_JSON = "Backend/ai_Tamping_zones/results/estado_nueva_medicion_sections_update.json"
+OUTPUT_CSV  = "../results/estado_nueva_medicion_con_pred_update.csv"
+OUTPUT_JSON = "../results/estado_nueva_medicion_sections_update.json"
 
 os.makedirs(os.path.dirname(OUTPUT_CSV), exist_ok=True)
 os.makedirs(os.path.dirname(OUTPUT_JSON), exist_ok=True)

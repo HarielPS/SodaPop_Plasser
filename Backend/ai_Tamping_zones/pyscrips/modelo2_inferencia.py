@@ -11,14 +11,15 @@ import torch.nn as nn
 # 1. Rutas
 # ===========================
 # CSV NUEVO que quieres probar (excel verdadero)
-FILE_STATE_NEW = "Backend/ai_Tamping_zones/datasets/estado_nueva_medicion.csv"
+# CSV NUEVO que quieres probar (excel verdadero)
+FILE_STATE_NEW = "../datasets/estado_nueva_medicion.csv"
 
 # Modelo entrenado
-MODEL_PATH = "Backend/ai_Tamping_zones/models/modelo2_tamping.pt"
+MODEL_PATH = "../models/modelo2_tamping.pt"
 
 # Salidas
-OUTPUT_CSV  = "Backend/ai_Tamping_zones/results/estado_nueva_medicion_con_pred.csv"
-OUTPUT_JSON = "Backend/ai_Tamping_zones/results/estado_nueva_medicion_sections.json"
+OUTPUT_CSV  = "../results/estado_nueva_medicion_con_pred.csv"
+OUTPUT_JSON = "../results/estado_nueva_medicion_sections.json"
 
 os.makedirs(os.path.dirname(OUTPUT_CSV), exist_ok=True)
 os.makedirs(os.path.dirname(OUTPUT_JSON), exist_ok=True)
