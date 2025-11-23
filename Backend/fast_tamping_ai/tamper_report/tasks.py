@@ -28,7 +28,7 @@ MODELO_FASTER_RCNN_PATH = BASE_DIR / "modelos" / "fasterrcnn_sleeper.pth"
 
 model.load_state_dict(
     torch.load(
-        MODELO_FASTER_RCNN_PATH
+        str(MODELO_FASTER_RCNN_PATH)
         map_location=device,
     )
 )
@@ -189,7 +189,7 @@ def _load_resources():
         )
         _model_gru.load_state_dict(
             torch.load(
-                os.path.join(MODELS_DIR, "fusion_gru_weights.pth"), map_location=device
+                os.path.join(str(MODELS_DIR), "fusion_gru_weights.pth"), map_location=device
             )
         )
         _model_gru.eval()
