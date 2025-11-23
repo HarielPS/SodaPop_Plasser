@@ -6,7 +6,7 @@
     "lon_inicio": -99.214226,
     "lon_fin": -99.15699,
     "hundimiento_mm": 0.0,
-    "ajuste_izquierdo_mm": 0.0245,
-    "ajuste_derecho_mm": 0.0158
+    "ajuste_izquierdo_mm": 0.1334,
+    "ajuste_derecho_mm": 0.0845
   }
 ]

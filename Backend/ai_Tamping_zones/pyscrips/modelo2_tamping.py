@@ -16,8 +16,11 @@ import torch.optim as optim
 # ===========================
 # 1. Cargar datasets
 # ===========================
-FILE_STATE = "Backend/ai_Tamping_zones/datasets/plantilla_etiquetas_modelo2.csv"
-FILE_RAW   = "Backend/ai_error_corrector/datasets/datos_inspeccion_vias.csv"
+# Desde pyscrips subir a ai_Tamping_zones/
+FILE_STATE = "../datasets/plantilla_etiquetas_modelo2.csv"
+
+# Para ai_error_corrector subir 2 niveles hacia Backend/
+FILE_RAW   = "../../ai_error_corrector/datasets/datos_inspeccion_vias.csv"
 
 df_state = pd.read_csv(FILE_STATE)
 df_raw   = pd.read_csv(FILE_RAW)
@@ -233,7 +236,7 @@ print(f"Tiempo medio inferencia: {avg_sample_ms:.6f} ms/muestra")
 # ===========================
 # 7. Salida por secciones (para la tamping)
 # ===========================
-L_SECCION = 5.0  # largo de la máquina en metros
+L_SECCION = 3.0  # largo de la máquina en metros
 
 dist  = df_state[M_COL].values.astype(float)
 lat   = df_state[LAT_COL].values.astype(float)
@@ -304,7 +307,7 @@ while current_start < end_track:
     current_start = current_end
 
 
-OUTPUT_JSON = "Backend/ai_Tamping_zones/results/output_modelo2_sections.json"
+OUTPUT_JSON = "../results/output_modelo2_sections.json"
 os.makedirs(os.path.dirname(OUTPUT_JSON), exist_ok=True)
 
 with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
@@ -319,6 +322,6 @@ for sec in secciones_output[:3]:
 # ===========================
 # 8. Guardar modelo entrenado
 # ===========================
-save_path = "/home/harielpadillasanchez/Documentos/hackathon/SodaPop_Plasser/Backend/ai_Tamping_zones/models/modelo2_tamping.pt"
+save_path = "../models/modelo2_tamping.pt"
 torch.save(model.state_dict(), save_path)
 print(f"\nModelo guardado en: {save_path}")
