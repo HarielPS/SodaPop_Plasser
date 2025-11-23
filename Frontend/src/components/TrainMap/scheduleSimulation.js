@@ -7,7 +7,7 @@ export function updateSimTime(t) {
 }
 
 /* -------------------------------------------------------
-   UTILS
+UTILS
 --------------------------------------------------------*/
 
 /** Encuentra el punto más cercano de una ruta */
@@ -230,9 +230,14 @@ export function scheduleSimulation({
    LIMPIEZA
 --------------------------------------------------------*/
 export function clearSimulation(registryRef, layerGroup) {
+  if (registryRef.current) {
+  
+
+
   registryRef.current.forEach((item) => {
     if (item.intervalId) clearInterval(item.intervalId);
     if (item.marker) layerGroup.removeLayer(item.marker);
   });
   registryRef.current = [];
+}
 }
