@@ -1,2 +1,1 @@
-# Contenido de runtime.txt
 python-3.11
