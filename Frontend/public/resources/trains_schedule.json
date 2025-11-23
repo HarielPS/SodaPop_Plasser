@@ -1,32 +1,30 @@
 {
   "trains": [
-    { "id": "L1-T1", "line": 1, "departureSec": 0,   "travelTimeSec": 180 },
-    { "id": "L1-T2", "line": 1, "departureSec": 90,  "travelTimeSec": 180 },
-    { "id": "L2-T1", "line": 2, "departureSec": 30,  "travelTimeSec": 210 },
-    { "id": "L3-T1", "line": 3, "departureSec": 60,  "travelTimeSec": 200 },
-    { "id": "L3-T2", "line": 3, "departureSec": 150, "travelTimeSec": 200 }
+    { "id": "L1-T1", "line": 1, "departureSec": 0,   "travelTimeSec": 2 },
+    { "id": "L1-T2", "line": 1, "departureSec": 200,  "travelTimeSec": 2 },
+    { "id": "L2-T1", "line": 2, "departureSec": 5,  "travelTimeSec": 2 },
+    { "id": "L3-T1", "line": 3, "departureSec": 200,  "travelTimeSec": 2 },
+    { "id": "L3-T2", "line": 3, "departureSec": 20, "travelTimeSec": 2 }
   ],
 
   "tampingMachines": [
     {
       "id": "TM-1",
       "line": 1,
-      "departureSec": 20,
       "targetLat": 19.4326,
       "targetLon": -99.1332,
       "travelTimeToTargetSec": 120,
-      "dwellTimeSec": 60,
-      "returnToBase": true
+      "returnToBase": true,
+      "description": "Hundimiento crítico en L1"
     },
     {
       "id": "TM-2",
       "line": 2,
-      "departureSec": 80,
       "targetLat": 19.40,
       "targetLon": -99.17,
       "travelTimeToTargetSec": 90,
-      "dwellTimeSec": 45,
-      "returnToBase": false
+      "returnToBase": true,
+      "description": "Ajuste preventivo en L2"
     }
   ]
 }

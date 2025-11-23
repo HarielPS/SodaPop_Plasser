@@ -43,7 +43,8 @@ export function animateTrainOnPath({
   });
 
   // Crear marker de tren en el inicio
-  const marker = L.marker(path[0], { icon: trainIcon }).addTo(layerGroup);
+//   const marker = L.marker(path[0], { icon: trainIcon }).addTo(layerGroup);
+    marker.setLatLng(path[idx]);
   trainMarkerRef.current = marker;
 
   let currentStep = 0;

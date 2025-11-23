@@ -1,254 +1,242 @@
 // utils/scheduleSimulation.js
 import L from "leaflet";
 
-/**
- * Encuentra el índice del punto de la ruta más cercano a (lat, lon)
- */
+/** Encuentra el punto más cercano */
 function findClosestIndex(path, targetLat, targetLon) {
-  if (!path || path.length === 0) return 0;
-
-  let bestIdx = 0;
-  let bestDist = Infinity;
-
+  let best = 0, bestDist = Infinity;
   for (let i = 0; i < path.length; i++) {
     const [lat, lon] = path[i];
-    const dLat = lat - targetLat;
-    const dLon = lon - targetLon;
-    const distSq = dLat * dLat + dLon * dLon;
-    if (distSq < bestDist) {
-      bestDist = distSq;
-      bestIdx = i;
-    }
+    const d = (lat - targetLat) ** 2 + (lon - targetLon) ** 2;
+    if (d < bestDist) { bestDist = d; best = i; }
   }
-  return bestIdx;
+  return best;
 }
 
-/**
- * Mueve un marker a lo largo de un path en durationMs
- */
+/** Animación sin duplicar markers */
 function animateMarkerAlongPath({
-  layerGroup,
   path,
   durationMs,
   icon,
+  marker,           // 🔵 ahora recibe marker siempre
+  registry,
+  isTrain = false,
+  lineIdx,
+  blockState,
+  onStep,
   onComplete,
-  registry
 }) {
-  if (!path || path.length < 2) return;
+  if (!marker || !path || path.length < 2) return;
 
-  const marker = L.marker(path[0], { icon }).addTo(layerGroup);
   const steps = path.length - 1;
   const stepTime = durationMs / steps;
-
   let idx = 0;
+
+  const safeDistance = 10;
+
   const intervalId = setInterval(() => {
+
+    // 🚧 Tren detenido por bloqueo
+    if (isTrain && blockState.blocks[lineIdx]) {
+      const blocked = blockState.blocks[lineIdx].idx;
+      if (idx + safeDistance >= blocked) return;
+    }
+
     idx++;
     if (idx >= path.length) {
       clearInterval(intervalId);
       if (onComplete) onComplete(marker);
       return;
     }
+
     marker.setLatLng(path[idx]);
+    if (onStep) onStep(idx, marker);
+
   }, stepTime);
 
-  // Guardamos el intervalo y el marker para poder limpiarlos luego
   registry.push({ marker, intervalId });
 }
 
-/**
- * Programa trenes normales (en bucle) y máquinas de tamping.
- */
+/** PROCESO PRINCIPAL */
 export function scheduleSimulation({
   map,
   layerGroup,
   lineSegments,
   schedule,
-  registryRef
+  registryRef,
 }) {
-  if (!schedule || !lineSegments) return;
-
   const registry = [];
   registryRef.current = registry;
 
-  // Icono de tren
+  const blueMachines = {}; // 🔵 UNA sola máquina por ID
+  const blockState = { blocks: {} };
+  const tampingLaunchedForLine = {};
+
   const trainIcon = L.divIcon({
-    html: `<div style="
-      background: #ffcc00;
-      width: 24px;
-      height: 16px;
-      border-radius: 4px;
-      box-shadow: 0 0 15px rgba(255, 204, 0, 0.8);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-    ">🚄</div>`,
+    html: `<div style="background:#ffcc00;width:24px;height:16px;border-radius:4px;
+    box-shadow:0 0 15px #fc0;display:flex;align-items:center;justify-content:center">🚄</div>`,
     iconSize: [24, 16],
     iconAnchor: [12, 8],
+    options: { type: "train" },
   });
 
-  // Icono de máquina de tamping
   const tampingIcon = L.divIcon({
-    html: `<div style="
-      background: #00e0ff;
-      width: 22px;
-      height: 18px;
-      border-radius: 4px;
-      box-shadow: 0 0 12px rgba(0, 224, 255, 0.8);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-    ">🛠️</div>`,
+    html: `<div style="background:#00e0ff;width:22px;height:18px;border-radius:4px;
+    box-shadow:0 0 12px #0ef;display:flex;align-items:center;justify-content:center">🛠️</div>`,
     iconSize: [22, 18],
     iconAnchor: [11, 9],
+    options: { type: "tamping" },
   });
 
-  // Icono / estilo de la zona de tamping
-  const zoneStyle = {
-    radius: 8,
-    color: "#00e0ff",
-    weight: 2,
-    fillColor: "#00e0ff",
-    fillOpacity: 0.3
-  };
-
-  // ============================
-  //         TRENES (BUCLE)
-  // ============================
-  (schedule.trains || []).forEach((train) => {
-    const lineIdx = (train.line || 1) - 1;
-    const path = lineSegments[lineIdx];
-    if (!path) return;
-
-    const departMs = (train.departureSec || 0) * 1000;
-    const travelMs = (train.travelTimeSec || 180) * 1000;
-
-    // Lanza un tren una sola vez
-    const launchSingleTrain = () => {
-      animateMarkerAlongPath({
-        layerGroup,
-        path,
-        durationMs: travelMs,
-        icon: trainIcon,
-        registry,
-        onComplete: () => {
-          // Cuando llega al final, vuelve a programarse tras el mismo offset
-          setTimeout(launchSingleTrain, departMs);
-        },
-      });
-    };
-
-    // Primer lanzamiento
-    setTimeout(launchSingleTrain, departMs);
-  });
-
-  // ============================
-  //   MÁQUINAS DE TAMPING
-  // ============================
-  (schedule.tampingMachines || []).forEach((tm) => {
-    const lineIdx = (tm.line || 1) - 1;
+  function triggerTampingForLine(lineIdx) {
     const fullPath = lineSegments[lineIdx];
     if (!fullPath) return;
 
-    const departMs = (tm.departureSec || 0) * 1000;
-    const travelMs = (tm.travelTimeToTargetSec || 120) * 1000;
-    const dwellMs = (tm.dwellTimeSec || 60) * 1000;
+    const machines = schedule.tampingMachines.filter(m => (m.line - 1) === lineIdx);
 
-    // ======================
-    // 1) Elegir índice objetivo
-    // ======================
-    let targetIndex;
+    machines.forEach((tm) => {
+      let targetIndex =
+        tm.targetIndex ??
+        findClosestIndex(fullPath, tm.targetLat, tm.targetLon);
 
-    // a) Si viene targetLat/targetLon en el JSON -> buscar punto más cercano en la ruta
-    if (typeof tm.targetLat === "number" && typeof tm.targetLon === "number") {
-      targetIndex = findClosestIndex(fullPath, tm.targetLat, tm.targetLon);
-    }
-    // b) Si viene targetIndex, usarlo (clamp al rango)
-    else if (typeof tm.targetIndex === "number") {
-      targetIndex = Math.min(
-        Math.max(tm.targetIndex, 0),
-        fullPath.length - 1
-      );
-    }
-    // c) Si no hay nada, usar la mitad de la ruta
-    else {
-      targetIndex = Math.floor(fullPath.length / 2);
-    }
+      const [zLat, zLon] = fullPath[targetIndex];
 
-    const targetLatLng = fullPath[targetIndex];
+      // 🚨 bloquear línea desde YA
+      blockState.blocks[lineIdx] = { idx: 0 };
 
-    // ======================
-    // 2) Dibujar la zona de tamping en la vía (punto visible)
-    // ======================
-    if (targetLatLng) {
-      const [zLat, zLon] = targetLatLng;
-      const zoneMarker = L.circleMarker([zLat, zLon], zoneStyle)
-        .bindPopup(`<b>${tm.id}</b><br/>Zona de tamping`)
-        .addTo(layerGroup);
+      // 🔵 dibujar zona
+      const zoneMarker = L.circleMarker([zLat, zLon], {
+        radius: 8, fillColor: "#00e0ff", fillOpacity: 0.4,
+        color: "#00e0ff", weight: 2
+      }).addTo(layerGroup);
 
-      // Lo registramos para poder limpiarlo después
       registry.push({ marker: zoneMarker, intervalId: null });
-    }
 
-    const pathToTarget = fullPath.slice(0, targetIndex + 1);
-    const pathBack = pathToTarget.slice().reverse();
+      // popup
+      L.popup().setLatLng([zLat, zLon]).setContent(`
+        <b>⚠ Hundimiento detectado</b><br>
+        Línea ${tm.line}<br>${tm.description || ""}
+      `).openOn(map);
 
-    // ======================
-    // 3) Misión de tamping: ir → esperar → regresar o avanzar
-    // ======================
-    const launchTampingMission = () => {
-      // Ir hasta la zona de reparación
-      animateMarkerAlongPath({
-        layerGroup,
+      // rutas
+      const pathToTarget = fullPath.slice(0, targetIndex + 1);
+      const restPath = fullPath.slice(targetIndex);
+
+      const dwellMs = 4000;
+      const travelMs = 3000;
+
+      // 🛠️ Crear marker azul SOLO UNA VEZ
+      if (!blueMachines[tm.id]) {
+        blueMachines[tm.id] = L.marker(pathToTarget[0], { icon: tampingIcon })
+          .addTo(layerGroup);
+      }
+      const blue = blueMachines[tm.id];
+
+      const onStepTo = (i) => blockState.blocks[lineIdx] = { idx: i };
+      const onStepRest = (i) => blockState.blocks[lineIdx] = { idx: targetIndex + i };
+
+      // IR a la zona
+        animateMarkerAlongPath({
         path: pathToTarget,
         durationMs: travelMs,
         icon: tampingIcon,
+        marker: blue,
         registry,
-        onComplete: (marker) => {
-          // Esperar trabajando en la zona
-          setTimeout(() => {
-            if (tm.returnToBase) {
-              // Regresa al origen
-              animateMarkerAlongPath({
-                layerGroup,
-                path: pathBack,
-                durationMs: travelMs,
-                icon: tampingIcon,
-                registry,
-                onComplete: () => {
-                  layerGroup.removeLayer(marker);
-                },
-              });
-            } else {
-              // Sigue avanzando hacia adelante desde la zona
-              const restPath = fullPath.slice(targetIndex);
-              animateMarkerAlongPath({
-                layerGroup,
-                path: restPath,
-                durationMs: travelMs,
-                icon: tampingIcon,
-                registry,
-              });
+        isTrain: false,
+        lineIdx,
+        blockState,
+        onStep: onStepTo,
+
+        onComplete: () => {
+
+            // Esperar 4 s en la zona de reparación
+            setTimeout(() => {
+
+            // 🟦 1) QUITAR el círculo de reparación ANTES de avanzar
+            if (zoneMarker) {
+                layerGroup.removeLayer(zoneMarker);
             }
-          }, dwellMs);
+
+            // 🟦 2) LIBERAR la línea inmediatamente (para que trenes puedan salir)
+            blockState.blocks[lineIdx] = null;
+
+            // 🟦 3) AVANZAR hacia adelante por el resto de la línea
+            animateMarkerAlongPath({
+                path: restPath,
+                durationMs: 3000, // velocidad fija 3 s
+                icon: tampingIcon,
+                marker: blue,
+                registry,
+                isTrain: false,
+                lineIdx,
+                blockState,
+
+                onStep: (i) => {
+                // mantener actualizado el índice de bloqueo mientras se mueve
+                blockState.blocks[lineIdx] = { idx: targetIndex + i };
+                },
+
+                onComplete: () => {
+                // ya no hay nada más que hacer
+                // la línea ya fue liberada arriba
+                },
+            });
+
+            }, dwellMs); // dwellMs = 4000 ms (4 s)
+        },
+        });
+
+
+    });
+  }
+
+  /** TRENES */
+  schedule.trains.forEach((train) => {
+    const lineIdx = train.line - 1;
+    const path = lineSegments[lineIdx];
+    const departMs = train.departureSec * 1000;
+    const travelMs = train.travelTimeSec * 1000;
+
+    const launch = () => {
+
+      if (blockState.blocks[lineIdx]) {
+        setTimeout(launch, 1000);
+        return;
+      }
+
+      const marker = L.marker(path[0], { icon: trainIcon }).addTo(layerGroup);
+
+      animateMarkerAlongPath({
+        path,
+        durationMs: travelMs,
+        icon: trainIcon,
+        marker,
+        registry,
+        isTrain: true,
+        lineIdx,
+        blockState,
+        onComplete: () => {
+
+          if (!tampingLaunchedForLine[lineIdx]) {
+            tampingLaunchedForLine[lineIdx] = true;
+            triggerTampingForLine(lineIdx);
+          }
+
+          setTimeout(launch, departMs);
         },
       });
+
     };
 
-    // Por ahora, una misión única (no en bucle) para no saturar la línea.
-    setTimeout(launchTampingMission, departMs);
+    setTimeout(launch, departMs);
   });
+
 }
 
-/**
- * Limpia todos los markers y animaciones activos
- */
+/** Limpieza */
 export function clearSimulation(registryRef, layerGroup) {
-  const registry = registryRef.current || [];
-  registry.forEach(({ marker, intervalId }) => {
-    if (intervalId) clearInterval(intervalId);
-    if (layerGroup && marker) layerGroup.removeLayer(marker);
+  registryRef.current.forEach(item => {
+    if (item.intervalId) clearInterval(item.intervalId);
+    if (item.marker) layerGroup.removeLayer(item.marker);
   });
   registryRef.current = [];
 }
