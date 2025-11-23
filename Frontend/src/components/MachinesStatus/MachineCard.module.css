@@ -1,0 +1,26 @@
+.card {
+  background-color: #222;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #444;
+  color: white;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.status {
+  margin-top: 8px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}

@@ -1,0 +1,27 @@
+.card {
+    background: #222;
+    border-left: 4px solid #ffcc00;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+  }
+  
+  .header {
+    font-size: 18px;
+    color: #ffcc00;
+    margin-bottom: 10px;
+  }
+  
+  .severity {
+    color: #ff4d4d;
+  }
+  
+  .btn {
+    margin-top: 10px;
+    padding: 7px 14px;
+    border: none;
+    background: #ffcc00;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+  }

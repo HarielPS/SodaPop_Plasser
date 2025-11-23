@@ -1,0 +1,30 @@
+.box {
+    grid-column: span 2;
+    background: #1a1a1a;
+    padding: 20px;
+    border-radius: 10px;
+    border: 2px solid #ffcc00;
+  }
+  
+  .title {
+    font-size: 20px;
+    margin-bottom: 15px;
+    color: #ffcc00;
+  }
+  
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    color: white;
+  }
+  
+  .table th {
+    background: #333;
+    padding: 8px;
+    color: #ffcc00;
+  }
+  
+  .table td {
+    padding: 8px;
+    border-bottom: 1px solid #333;
+  }

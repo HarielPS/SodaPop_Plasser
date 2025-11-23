@@ -1,0 +1,12 @@
+.card {
+    background: #222;
+    padding: 12px;
+    border-radius: 6px;
+    border-left: 4px solid #ffcc00;
+  }
+  
+  .name {
+    color: #ffcc00;
+    font-size: 17px;
+    margin-bottom: 5px;
+  }

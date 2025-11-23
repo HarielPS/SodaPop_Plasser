@@ -1,0 +1,107 @@
+.admin-container {
+    padding: 30px;
+    background: #0f0f0f;
+    min-height: 100vh;
+    color: white;
+    font-family: "Inter", sans-serif;
+  }
+  
+  .admin-title {
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 25px;
+    color: #ffcc00;
+    border-bottom: 2px solid #ffcc00;
+    padding-bottom: 10px;
+  }
+  
+  .form-box {
+    background: #1a1a1a;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #333;
+    margin-bottom: 30px;
+  }
+  
+  .form-box h3 {
+    font-size: 20px;
+    margin-bottom: 15px;
+    color: #ffcc00;
+  }
+  
+  .form-box input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 12px;
+    border: none;
+    border-radius: 6px;
+    background: #2a2a2a;
+    color: white;
+    font-size: 15px;
+  }
+  
+  .form-box input:focus {
+    outline: 2px solid #ffcc00;
+  }
+  
+  .btn-add {
+    width: 100%;
+    padding: 10px;
+    background: #ffcc00;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: .2s;
+  }
+  
+  .btn-add:hover {
+    background: #e6b800;
+  }
+  
+  .operators-list {
+    margin-top: 20px;
+  }
+  
+  .operator-card {
+    background: #1b1b1b;
+    border: 1px solid #333;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .operator-info {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .operator-name {
+    font-size: 17px;
+    font-weight: bold;
+    color: #ffcc00;
+  }
+  
+  .operator-username {
+    font-size: 14px;
+    color: #bbb;
+  }
+  
+  .btn-delete {
+    background: #e02f2f;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    transition: .2s;
+  }
+  
+  .btn-delete:hover {
+    background: #b82828;
+  }
