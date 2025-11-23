@@ -20,7 +20,7 @@ export default function Sidebar() {
           Diagnostics & History
         </Link>
 
-        <Link className={styles.link} to="/cameras">
+        <Link className={styles.link} to="/train-cameras">
           <MdSettings className={styles.icon} />
           Machine Cameras
         </Link>

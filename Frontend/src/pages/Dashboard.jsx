@@ -10,10 +10,10 @@ import styles from "./Dashboard.module.css";
 
 export default function Dashboard({ user }) {
   return (
-    <div className={styles.container}>
+    <div className={styles.layout}>
       <Sidebar />
 
-      <main className={styles.main}>
+      <main className={styles.content}>
         <Header user={user} />
 
         <div className={styles.grid}>
