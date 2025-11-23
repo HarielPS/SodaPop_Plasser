@@ -37,14 +37,14 @@ export default function TrainMap() {
     routeLayerRef.current = L.layerGroup().addTo(mapInstanceRef.current);
 
     // ============ LEER CSV ============
-    fetch("/resources/datos_inspeccion_vias.csv")
+    fetch("/resources/datos_limpios_modelo1_output.csv")
       .then((res) => res.text())
       .then((text) => {
         const rows = text.trim().split("\n");
         const header = rows[0].split(",");
 
-        const latIdx = header.indexOf("Lat_barato");
-        const lonIdx = header.indexOf("Lon_barato");
+        const latIdx = header.indexOf("Lat_caro");
+        const lonIdx = header.indexOf("Lon_caro");
 
         const latlngs = [];
         for (let i = 1; i < rows.length; i++) {

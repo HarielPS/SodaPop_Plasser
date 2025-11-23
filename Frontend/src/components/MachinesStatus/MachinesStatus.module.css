@@ -1,4 +1,18 @@
 .container {
-    display: flex;
-    gap: 15px;
-  }
+  width: 100%;
+  height: auto;        /* ← evita que se extienda */
+  min-height: 120px;   /* ← altura razonable */
+  background: #1a1a1a;
+  border-radius: 10px;
+  border: 1px solid #333;
+  padding: 16px;
+
+  display: flex;
+  gap: 12px;
+
+  /* ESTO ES MUY IMPORTANTE 🔥 */
+  align-items: flex-start;
+  justify-content: space-between;
+
+  overflow: hidden;   /* ← evita que algo rompa el tamaño */
+}
