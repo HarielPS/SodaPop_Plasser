@@ -1,0 +1,24 @@
+[
+  {
+    "seccion_id": 0,
+    "lat_inicio": 19.42891502380371,
+    "lat_fin": 19.428375244140625,
+    "lon_inicio": -99.15182495117188,
+    "lon_fin": -99.15088653564453,
+    "hundimiento_izquierdo_mm": 31.44472312927246,
+    "hundimiento_derecho_mm": 35.98711395263672,
+    "ajuste_izquierdo_mm": 28.436565399169922,
+    "ajuste_derecho_mm": 31.49740219116211
+  },
+  {
+    "seccion_id": 1,
+    "lat_inicio": 19.426870346069336,
+    "lat_fin": 19.40464973449707,
+    "lon_inicio": -99.15316772460938,
+    "lon_fin": -99.191162109375,
+    "hundimiento_izquierdo_mm": 1.0409294366836548,
+    "hundimiento_derecho_mm": 0.34185147285461426,
+    "ajuste_izquierdo_mm": 1.1386371850967407,
+    "ajuste_derecho_mm": 0.8167542219161987
+  }
+]
