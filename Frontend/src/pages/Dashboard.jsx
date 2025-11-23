@@ -1,23 +1,19 @@
 import Sidebar from "../components/Sidebar/Sidebar.jsx";
 import Header from "../components/Header/Header.jsx";
 import TrainMap from "../components/TrainMap/TrainMap.jsx";
-import AlertsPanel from "../components/AlertsPanel/AlertsPanel.jsx";
+import AlertsPanel from "../components/AlertsPanel/XAlertsPanel.jsx";
 import MachinesStatus from "../components/MachinesStatus/MachinesStatus.jsx";
 import ArrivalTimer from "../components/ArrivalTimer/ArrivalTimer.jsx";
 import KPIsPanel from "../components/KPIsPanel/KPIsPanel.jsx";
 
 import styles from "./Dashboard.module.css";
 
-
-
 export default function Dashboard() {
   return (
-    <div className={styles.container}>
-      {/* LEFT SIDEBAR */}
+    <div className={styles.layout}>
       <Sidebar />
 
-      {/* MAIN CONTENT */}
-      <main className={styles.main}>
+      <div className={styles.content}>
         <Header />
 
         <div className={styles.grid}>
@@ -27,7 +23,7 @@ export default function Dashboard() {
           <MachinesStatus />
           <KPIsPanel />
         </div>
-      </main>
+      </div>
     </div>
   );
 }

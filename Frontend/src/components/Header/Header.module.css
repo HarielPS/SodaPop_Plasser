@@ -1,0 +1,41 @@
+.header {
+  height: 70px;
+  width: 100%;
+  background-color: whitesmoke;
+  border-bottom: 3px solid #ffcc00;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 25px;
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo {
+  height: 45px;
+}
+
+.titleBox {
+  display: flex;
+  flex-direction: column;
+}
+
+.mainTitle {
+  color: #ffcc00;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.subtitle {
+  color: white;
+  font-size: 12px;
+}
+
+.status {
+  color: #ddd;
+  font-size: 14px;
+}

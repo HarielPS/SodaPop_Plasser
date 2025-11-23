@@ -1,0 +1,44 @@
+.sidebar {
+    width: 260px;
+    background-color: #141414;
+    height: 100vh;
+    padding: 25px 20px;
+    border-right: 3px solid #ffcc00;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+  
+  .logo {
+    color: #ffcc00;
+    font-size: 22px;
+    font-weight: bold;
+  }
+  
+  .nav {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .link {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 17px;
+    color: #dcdcdc;
+    text-decoration: none;
+    padding: 10px 5px;
+    border-radius: 8px;
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .link:hover {
+    background-color: #ffcc00;
+    color: black;
+    cursor: pointer;
+  }
+  
+  .icon {
+    font-size: 22px;
+  }

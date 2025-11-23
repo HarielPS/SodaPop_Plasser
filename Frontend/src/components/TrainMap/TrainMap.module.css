@@ -1,0 +1,41 @@
+.mapContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .title {
+    color: #ffcc00;
+    font-size: 20px;
+    font-weight: 600;
+  }
+  
+  .map {
+    height: 250px;
+    background: linear-gradient(135deg, #202020, #0d0d0d);
+    border: 2px solid #333;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  /* Placeholder "tracks" */
+  .track {
+    height: 6px;
+    width: 100%;
+    background: #555;
+    position: absolute;
+    top: 50%;
+  }
+  
+  /* Placeholder train */
+  .train {
+    width: 30px;
+    height: 16px;
+    background: #ffcc00;
+    position: absolute;
+    top: calc(50% - 8px);
+    left: 20%;
+    border-radius: 4px;
+    box-shadow: 0 0 10px #ffcc00;
+  }
