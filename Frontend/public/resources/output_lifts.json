@@ -1,0 +1,12 @@
+[
+  {
+    "seccion_id": 0,
+    "lat_inicio": 47.760914,
+    "lat_fin": 47.72946,
+    "lon_inicio": 13.042772,
+    "lon_fin": 13.041029,
+    "hundimiento_mm": 1816352.5518850002,
+    "ajuste_izquierdo_mm": 200.0,
+    "ajuste_derecho_mm": 200.0
+  }
+]

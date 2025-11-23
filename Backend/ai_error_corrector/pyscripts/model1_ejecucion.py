@@ -42,10 +42,11 @@ INFERENCE_FILE = (
 )
 OUTPUT_FILE = "../datasets/datos_limpios_modelo1_output.csv"
 
-# Parámetros del modelo (Deben ser EXACTOS al entrenamiento)
+# 🛑🛑 CORRECCIÓN CRÍTICA DE HIPERPARÁMETROS 🛑🛑
+# Deben coincidir con los valores optimizados del entrenamiento.
 INPUT_SIZE = 14
 OUTPUT_SIZE = 14
-HIDDEN_SIZE = 64
+HIDDEN_SIZE = 128  # ¡Cambiado de 64 a 128!
 NUM_LAYERS = 2
 
 # Determinar dispositivo (Jetson Nano usará CUDA si está disponible)
@@ -97,12 +98,11 @@ X_crudo = df_crudo.drop("Time", axis=1).values  # 14 columnas de entrada
 X_scaled_inf = scaler_X.transform(X_crudo)
 
 # Convertir a tensor (añadiendo las dimensiones de Batch y Secuencia)
+# El procesamiento se hace por lotes (N, 1, 14) pero el Batch Size N puede ser grande
 X_tensor = torch.tensor(X_scaled_inf, dtype=torch.float32).unsqueeze(1).to(device)
 
 # Realizar la predicción
 with torch.no_grad():
-    # El modelo predice en bloques de 4 (batch size) o todo a la vez
-    # Para ser robustos, procesamos todo el tensor si es pequeño
     outputs_scaled = model(X_tensor)
 
 # La salida es (N, 1, 14), la reformateamos a (N, 14)

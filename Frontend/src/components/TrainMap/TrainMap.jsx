@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import styles from "./TrainMap.module.css";
@@ -163,11 +163,11 @@ export default function TrainMap({ railwayData }) {
       .then(text => {
         const rows = text.trim().split("\n");
         const header = rows[0].split(",");
-        const latIdx = header.indexOf("Lat_barato");
         const lonIdx = header.indexOf("Lon_barato");
+        const latIdx = header.indexOf("Lat_barato");
 
         if (latIdx === -1 || lonIdx === -1) {
-          console.error("No existe Lat_barato / Lon_barato en el CSV");
+          console.error("No existe Lat_caro / Lon_caro en el CSV");
           return;
         }
 
@@ -292,7 +292,7 @@ export default function TrainMap({ railwayData }) {
         }
 
         // ====== (Opcional) JSON de secciones, lo dejo igual ======
-        fetch("/resources/output_modelo2_sections.json")
+        fetch("/resources/output_lifts.json")
           .then(r => r.json())
           .then(sections => {
             sections.forEach(section => {

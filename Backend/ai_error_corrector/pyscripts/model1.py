@@ -68,8 +68,11 @@ class SensorDataset(Dataset):
 train_dataset = SensorDataset(X_train_t, Y_train_t)
 test_dataset = SensorDataset(X_test_t, Y_test_t)
 
-train_loader = DataLoader(train_dataset, batch_size=4, shuffle=False)
-test_loader = DataLoader(test_dataset, batch_size=4, shuffle=False)
+# 🚀 OPTIMIZACIÓN DE GPU: Aumentar el Batch Size
+batch_size = 128
+
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
+test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
 
 class FusionGRU(nn.Module):
@@ -102,7 +105,8 @@ class FusionGRU(nn.Module):
 
 INPUT_SIZE = X_train.shape[1]
 OUTPUT_SIZE = Y_train.shape[1]
-HIDDEN_SIZE = 64  # Valor bajo, óptimo para Jetson Nano
+# 🚀 OPTIMIZACIÓN DE CAPACIDAD: Aumentar Hidden Size
+HIDDEN_SIZE = 128
 NUM_LAYERS = 2
 model = FusionGRU(INPUT_SIZE, HIDDEN_SIZE, OUTPUT_SIZE, NUM_LAYERS).to(device)
 
@@ -110,13 +114,14 @@ model = FusionGRU(INPUT_SIZE, HIDDEN_SIZE, OUTPUT_SIZE, NUM_LAYERS).to(device)
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 num_epochs = 100
-batch_size = 4
 
 # Inicializar el escalador para AMP si usamos GPU
 if use_amp:
     scaler = torch.cuda.amp.GradScaler()
 
-print(f"Comenzando entrenamiento en {device} por {num_epochs} épocas...")
+print(
+    f"Comenzando entrenamiento en {device} por {num_epochs} épocas con Batch Size {batch_size}..."
+)
 
 for epoch in range(num_epochs):
     model.train()
