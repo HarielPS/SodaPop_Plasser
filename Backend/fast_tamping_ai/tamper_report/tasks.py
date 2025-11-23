@@ -9,14 +9,27 @@ import torchvision.transforms as T
 import cv2
 import numpy as np
 import os
+import json
+import pandas as pd
+import torch.nn as nn
+import joblib
+from typing import List, Dict, Union
 from django.conf import settings
+
+
+# ===========================================
+#  CONFIGURACIÓN BASE
+# ===========================================
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Render NO tiene GPU → seteamos CPU fijo
+device = torch.device("cpu")
+
+
 # ===========================================
-#  CARGA DEL MODELO UNA SOLA VEZ
+#  CARGA DEL MODELO FASTER R-CNN UNA SOLA VEZ
 # ===========================================
-device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
 
 print("Cargando modelo Faster R-CNN...")
 model = torchvision.models.detection.fasterrcnn_resnet50_fpn(weights=None)
@@ -24,78 +37,63 @@ model = torchvision.models.detection.fasterrcnn_resnet50_fpn(weights=None)
 num_classes = 2
 in_features = model.roi_heads.box_predictor.cls_score.in_features
 model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
+
 MODELO_FASTER_RCNN_PATH = BASE_DIR / "modelos" / "fasterrcnn_sleeper.pth"
 
+# FIX DE COMA AQUÍ ✔✔✔
 model.load_state_dict(
     torch.load(
-        str(MODELO_FASTER_RCNN_PATH)
+        str(MODELO_FASTER_RCNN_PATH),
         map_location=device,
     )
 )
 
 model.to(device)
 model.eval()
-print("✔ Modelo cargado correctamente")
+print("✔ Modelo Faster R-CNN cargado correctamente")
 
 
-# Transformación
+# Transformación a Tensor
 transform = T.Compose([T.ToTensor()])
 
 
 # ===========================================
-#  FUNCIÓN QUE RECIBIRÁ LA IMAGEN
+#  FUNCIÓN DE DETECCIÓN (MODELO 3)
 # ===========================================
+
 def detectar_dormideros_cv(image_cv):
     """
-    image_cv: imagen OpenCV (BGR)
-    Return: imagen OpenCV (BGR) con bounding boxes dibujados
+    Detecta dormideros usando Faster R-CNN.
+    image_cv → imagen OpenCV (BGR)
+    Devuelve imagen con bounding boxes.
     """
-
-    # Convert OpenCV → PIL
     img_rgb = cv2.cvtColor(image_cv, cv2.COLOR_BGR2RGB)
     pil_img = Image.fromarray(img_rgb)
 
-    # Transformar
     img_tensor = transform(pil_img).to(device)
 
-    # Inferencia
     with torch.no_grad():
         preds = model([img_tensor])
 
-    boxes = preds[0]["boxes"].detach().cpu().numpy()
-    scores = preds[0]["scores"].detach().cpu().numpy()
+    boxes = preds[0]["boxes"].cpu().numpy()
+    scores = preds[0]["scores"].cpu().numpy()
 
-    # Dibujar cajas sobre copia
     result_img = image_cv.copy()
 
     for box, score in zip(boxes, scores):
         if score >= 0.5:
             x1, y1, x2, y2 = box.astype(int).tolist()
-
-            # Dibujar bounding box sin texto
             cv2.rectangle(result_img, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
-    # Regresamos la imagen con cajas dibujadas
     return result_img
 
 
-import json
-import os
-import numpy as np
-import pandas as pd
-import torch
-import torch.nn as nn
-import joblib
-from typing import List, Dict, Union
+# ===========================================
+#  CONFIGURACIÓN MODELOS 1 Y 2 (TAMPING)
+# ===========================================
 
-# ==============================================================================
-# --- CONFIGURACIÓN Y RUTAS DE ARCHIVOS ---
-# ==============================================================================
-
-# Se asume que los modelos y escaladores están en estas rutas relativas a donde se ejecute la API.
 MODELS_DIR = BASE_DIR / "modelos"
 
-# Columnas base
 TIME_COL = "Time"
 M_COL = "Y_pos_m"
 LAT_COL = "X_pos_Lat"
@@ -109,7 +107,6 @@ HUND_DER_COL = "Hundimiento_Der_mm"
 ALIN_IZQ_COL = "Alineacion_Izq_mm"
 ALIN_DER_COL = "Alineacion_Der_mm"
 
-# Variables del Modelo 2
 FEATURE_COLS_MODELO2 = [
     HUND_IZQ_COL,
     HUND_DER_COL,
@@ -121,15 +118,12 @@ FEATURE_COLS_MODELO2 = [
     SPEED_COL,
 ]
 
-L_SECCION = 0.1  # Longitud 10 cm por sección
+L_SECCION = 0.1  # 10 cm
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# print(f"Dispositivo: {device}") # Se omite print en el módulo API
 
-# ==============================================================================
-# --- DEFINICIONES DE MODELOS (Necesarias para cargar) ---
-# ==============================================================================
-
+# ===========================================
+#  DEFINICIONES DE MODELOS
+# ===========================================
 
 class FusionGRU(nn.Module):
     def __init__(self, input_size, hidden_size, output_size, num_layers=2):
@@ -161,10 +155,10 @@ class MLPReg(nn.Module):
         return self.net(x)
 
 
-# ==============================================================================
-# --- CACHE DE RECURSOS (Para evitar recargar modelos en cada llamada) ---
-# ==============================================================================
-# Variables globales para almacenar modelos y escaladores cargados
+# ===========================================
+#  CACHE DE MODELOS PARA NO RECARGAR
+# ===========================================
+
 _model_gru = None
 _scaler_X = None
 _scaler_Y = None
@@ -172,310 +166,163 @@ _model_mlp = None
 
 
 def _load_resources():
-    """Carga los modelos y escaladores una sola vez."""
+    """Carga GRU + MLP + scalers una sola vez en memoria."""
     global _model_gru, _scaler_X, _scaler_Y, _model_mlp
 
-    if _model_gru is not None and _model_mlp is not None:
-        return True  # Ya cargados
+    if _model_gru is not None:
+        return True
 
     try:
-        # --- Modelo 1 (GRU) ---
-        INPUT_SIZE = 14
-        OUTPUT_SIZE = 14
-        HIDDEN_SIZE = 128
-        NUM_LAYERS = 2
-        _model_gru = FusionGRU(INPUT_SIZE, HIDDEN_SIZE, OUTPUT_SIZE, NUM_LAYERS).to(
-            device
-        )
+        # Modelo GRU
+        _model_gru = FusionGRU(14, 128, 14, 2).to(device)
         _model_gru.load_state_dict(
-            torch.load(
-                os.path.join(str(MODELS_DIR), "fusion_gru_weights.pth"), map_location=device
-            )
+            torch.load(str(MODELS_DIR / "fusion_gru_weights.pth"), map_location=device)
         )
         _model_gru.eval()
-        _scaler_X = joblib.load(os.path.join(MODELS_DIR, "scaler_X.pkl"))
-        _scaler_Y = joblib.load(os.path.join(MODELS_DIR, "scaler_Y.pkl"))
 
-        # --- Modelo 2 (MLP) ---
+        # Scalers
+        _scaler_X = joblib.load(MODELS_DIR / "scaler_X.pkl")
+        _scaler_Y = joblib.load(MODELS_DIR / "scaler_Y.pkl")
+
+        # Modelo MLP (Modelo 2)
         _model_mlp = MLPReg(in_dim=len(FEATURE_COLS_MODELO2)).to(device)
         _model_mlp.load_state_dict(
-            torch.load(
-                os.path.join(MODELS_DIR, "modelo2_tamping.pt"), map_location=device
-            )
+            torch.load(str(MODELS_DIR / "modelo2_tamping.pt"), map_location=device)
         )
         _model_mlp.eval()
 
-        print("✔ Modelos y escaladores cargados.")
+        print("✔ Modelos GRU / MLP cargados.")
         return True
-    except FileNotFoundError as e:
-        print(f"❌ ERROR al cargar recursos: {e}")
-        return False
+
     except Exception as e:
-        print(f"❌ ERROR inesperado al cargar recursos: {e}")
+        print(f"❌ Error cargando modelos: {e}")
         return False
 
 
-# ==============================================================================
-# --- FUNCIONES DE INFERENCIA (Extraídas y refactorizadas) ---
-# ==============================================================================
+# ===========================================
+#  MODELO 1: FUSIÓN / LIMPIEZA
+# ===========================================
 
-
-def _run_modelo1(df_crudo: pd.DataFrame) -> Union[pd.DataFrame, None]:
-    """Ejecuta el Modelo 1 (Fusión/Limpieza) con los modelos cacheados."""
-    model_gru = _model_gru
-    scaler_X = _scaler_X
-    scaler_Y = _scaler_Y
-
-    output_cols_names = [
-        "ax_caro",
-        "ay_caro",
-        "az_caro",
-        "wx_caro",
-        "wy_caro",
-        "wz_caro",
-        "Lat_caro",
-        "Lon_caro",
-        "Alt_caro",
-        "vN_caro",
-        "vE_caro",
-        "vU_caro",
-        "d_izq_caro",
-        "d_der_caro",
-    ]
-
-    time_data = df_crudo[TIME_COL]
-    # Asegurarse de que no falta ninguna columna, aunque el script original asume que todas están presentes.
-    try:
-        X = df_crudo.drop(TIME_COL, axis=1).values
-    except KeyError:
-        # Esto manejaría el caso en que falta la columna de tiempo, pero se asume que existe
-        return None
-
-    X_scaled = scaler_X.transform(X)
+def _run_modelo1(df):
+    """
+    Ejecuta el Modelo 1 (GRU).
+    """
+    X = df.drop(TIME_COL, axis=1).values
+    X_scaled = _scaler_X.transform(X)
 
     X_tensor = torch.tensor(X_scaled, dtype=torch.float32).unsqueeze(1).to(device)
+
     with torch.no_grad():
-        outputs_scaled = model_gru(X_tensor)
+        out_scaled = _model_gru(X_tensor)
 
-    outputs_scaled = outputs_scaled.squeeze(1).cpu().numpy()
-    outputs_real = scaler_Y.inverse_transform(outputs_scaled)
+    out = _scaler_Y.inverse_transform(out_scaled.cpu().numpy())
 
-    df_limpio = pd.DataFrame(outputs_real, columns=output_cols_names)
-    df_limpio.insert(0, TIME_COL, time_data.reset_index(drop=True))
-
-    return df_limpio
-
-
-def _run_fisica(df_limpio: pd.DataFrame) -> pd.DataFrame:
-    """Calcula las variables de física y estado."""
-    W = 1435
-    Y_IDEAL_M = 2240.35
-
-    df_clean = df_limpio.copy()
-    df_clean.columns = [
-        "Time",
-        "ax",
-        "ay",
-        "az",
-        "wx",
-        "wy",
-        "wz",
-        "Lat",
-        "Lon",
-        "Alt",
-        "vN",
-        "vE",
-        "vU",
-        "d_izq",
-        "d_der",
+    cols = [
+        "ax_caro", "ay_caro", "az_caro",
+        "wx_caro", "wy_caro", "wz_caro",
+        "Lat_caro", "Lon_caro", "Alt_caro",
+        "vN_caro", "vE_caro", "vU_caro",
+        "d_izq_caro", "d_der_caro"
     ]
 
-    df_estado = pd.DataFrame()
-    df_estado[TIME_COL] = df_clean["Time"]
-    df_estado[M_COL] = df_clean["Alt"]
-    df_estado["Z_pos_m"] = np.cumsum(df_clean["vN"] * df_clean["Time"].diff().fillna(0))
-    df_estado["Z_pos_m"] -= df_estado["Z_pos_m"].iloc[0]
+    df2 = pd.DataFrame(out, columns=cols)
+    df2.insert(0, TIME_COL, df[TIME_COL].values)
 
-    df_estado[LAT_COL] = df_clean["Lat"]
-    df_estado[LON_COL] = df_clean["Lon"]
-
-    df_estado[SPEED_COL] = df_clean["vE"]
-    df_estado[ROLL_COL] = np.arctan((df_clean["d_der"] - df_clean["d_izq"]) / W)
-    df_estado[PITCH_COL] = df_clean["wy"]
-    df_estado[YAW_COL] = df_clean["wz"]
-
-    df_estado[HUND_IZQ_COL] = (Y_IDEAL_M - df_clean["Alt"]) * 1000 - (
-        df_clean["d_izq"] - 500
-    )
-    df_estado[HUND_DER_COL] = (Y_IDEAL_M - df_clean["Alt"]) * 1000 - (
-        df_clean["d_der"] - 500
-    )
-
-    df_estado[ALIN_IZQ_COL] = df_clean["ax"] * 500
-    df_estado[ALIN_DER_COL] = -df_clean["ax"] * 500
-
-    df_final = (
-        df_estado[
-            [
-                TIME_COL,
-                LAT_COL,
-                LON_COL,
-                M_COL,
-                SPEED_COL,
-                ROLL_COL,
-                PITCH_COL,
-                YAW_COL,
-                HUND_IZQ_COL,
-                HUND_DER_COL,
-                ALIN_IZQ_COL,
-                ALIN_DER_COL,
-            ]
-        ]
-        .sort_values(M_COL)
-        .reset_index(drop=True)
-    )
-
-    return df_final
+    return df2
 
 
-def _run_modelo2(df_state: pd.DataFrame) -> List[Dict]:
-    """Ejecuta el Modelo 2 (MLP) por secciones y devuelve el resultado JSON."""
-    model = _model_mlp
+# ===========================================
+#  MODELO DE FÍSICA
+# ===========================================
 
-    dist = df_state[M_COL].values
-    lat = df_state[LAT_COL].values
-    lon = df_state[LON_COL].values
+def _run_fisica(df):
+    W = 1435
+    Y_IDEAL = 2240.35
 
-    # Extraer las características una vez
-    feature_data = {col: df_state[col].values for col in FEATURE_COLS_MODELO2}
+    df_out = pd.DataFrame()
+    df_out[TIME_COL] = df["Time"]
+    df_out[M_COL] = df["Alt_caro"]
 
-    start_track = dist.min()
-    end_track = dist.max()
+    df_out[LAT_COL] = df["Lat_caro"]
+    df_out[LON_COL] = df["Lon_caro"]
 
-    secciones_output = []
-    sec_id = 0
-    current_start = start_track
+    df_out[SPEED_COL] = df["vE_caro"]
+    df_out[ROLL_COL] = np.arctan((df["d_der_caro"] - df["d_izq_caro"]) / W)
+    df_out[PITCH_COL] = df["wy_caro"]
+    df_out[YAW_COL] = df["wz_caro"]
 
-    while current_start < end_track:
-        current_end = min(current_start + L_SECCION, end_track)
-        mask = (dist >= current_start) & (dist <= current_end)
+    df_out[HUND_IZQ_COL] = (Y_IDEAL - df["Alt_caro"]) * 1000 - (df["d_izq_caro"] - 500)
+    df_out[HUND_DER_COL] = (Y_IDEAL - df["Alt_caro"]) * 1000 - (df["d_der_caro"] - 500)
 
-        if not np.any(mask):
-            current_start = current_end
-            continue
+    df_out[ALIN_IZQ_COL] = df["ax_caro"] * 500
+    df_out[ALIN_DER_COL] = -df["ax_caro"] * 500
 
-        # Calcular promedios de características para la sección
-        x_sec = np.array(
-            [
-                float(max(0, feature_data[HUND_IZQ_COL][mask].mean())),
-                float(max(0, feature_data[HUND_DER_COL][mask].mean())),
-                float(feature_data[ALIN_IZQ_COL][mask].mean()),
-                float(feature_data[ALIN_DER_COL][mask].mean()),
-                float(feature_data[ROLL_COL][mask].mean()),
-                float(feature_data[PITCH_COL][mask].mean()),
-                float(feature_data[YAW_COL][mask].mean()),
-                float(feature_data[SPEED_COL][mask].mean()),
-            ],
-            dtype=np.float32,
-        )
+    return df_out.sort_values(M_COL).reset_index(drop=True)
 
-        hund_izq_prom = x_sec[0]
-        hund_der_prom = x_sec[1]
 
-        # Predicción del modelo
-        with torch.no_grad():
-            pred = (
-                model(torch.from_numpy(x_sec).unsqueeze(0).to(device)).cpu().numpy()[0]
-            )
+# ===========================================
+#  MODELO 2: PREDICCIÓN SECCIONES
+# ===========================================
 
-        # Generar diccionario de sección
-        secciones_output.append(
-            {
+def _run_modelo2(df):
+    dist = df[M_COL].values
+    lat = df[LAT_COL].values
+    lon = df[LON_COL].values
+
+    features = {col: df[col].values for col in FEATURE_COLS_MODELO2}
+
+    start = dist.min()
+    end = dist.max()
+
+    output = []
+
+    sec = start
+    while sec < end:
+        sec_end = min(sec + L_SECCION, end)
+        mask = (dist >= sec) & (dist <= sec_end)
+
+        if np.any(mask):
+            x = np.array([features[c][mask].mean() for c in FEATURE_COLS_MODELO2], dtype=np.float32)
+
+            with torch.no_grad():
+                pred = _model_mlp(torch.tensor(x).unsqueeze(0).to(device)).cpu().numpy()[0]
+
+            output.append({
                 "start_latitude": float(lat[mask][0]),
                 "stop_latitude": float(lat[mask][-1]),
                 "start_longitude": float(lon[mask][0]),
                 "stop_longitude": float(lon[mask][-1]),
-                "lift_left_mm": float(hund_izq_prom),
-                "lift_right_mm": float(hund_der_prom),
+                "lift_left_mm": float(x[0]),
+                "lift_right_mm": float(x[1]),
                 "adjustement_left_mm": float(np.clip(pred[0], 0, 200)),
                 "adjustement_right_mm": float(np.clip(pred[1], 0, 200)),
-            }
-        )
+            })
 
-        sec_id += 1
-        current_start = current_end
+        sec += L_SECCION
 
-    return secciones_output
+    return output
 
 
-# ==============================================================================
-# --- FUNCIÓN PRINCIPAL DE LA API ---
-# ==============================================================================
+# ===========================================
+#  FUNCIÓN PRINCIPAL
+# ===========================================
 
-
-def get_tamping_predictions(df_crudo: pd.DataFrame) -> Union[List[Dict], Dict]:
-    """
-    Ejecuta el pipeline de modelos (GRU, Física, MLP) y devuelve las
-    predicciones de ajuste de apisonamiento por sección.
-
-    Args:
-        df_crudo (pd.DataFrame): DataFrame de entrada con datos crudos.
-                                 Debe contener la columna 'Time' y las 14
-                                 columnas requeridas para el Modelo 1.
-
-    Returns:
-        Union[List[Dict], Dict]: Una lista de diccionarios (JSON) con los
-                                 resultados por sección, o un diccionario de
-                                 error en caso de fallo.
-    """
-    # 1. Cargar recursos (solo la primera vez)
+def get_tamping_predictions(df_raw):
     if not _load_resources():
-        return {
-            "error": "No se pudieron cargar los modelos o escaladores. Verifique las rutas en la carpeta 'models'."
-        }
+        return {"error": "Error cargando modelos"}
 
-    # 2. Modelo 1: Fusión/Limpieza de Sensores
-    df_limpio = _run_modelo1(df_crudo)
-    if df_limpio is None:
-        return {
-            "error": "Error durante la ejecución del Modelo 1. Verifique las columnas de entrada."
-        }
+    df1 = _run_modelo1(df_raw)
+    df2 = _run_fisica(df1)
+    return _run_modelo2(df2)
 
-    # 3. Cálculo de Física y Estado
-    df_estado = _run_fisica(df_limpio)
-    # df_estado nunca debería ser None si df_limpio no lo es.
 
-    # 4. Modelo 2: Predicción de Ajuste (Tamping)
-    resultados_json = _run_modelo2(df_estado)
-
-    # El script original guardaba el JSON, aquí simplemente lo devolvemos
-    return resultados_json
-
+# ===========================================
+#  FUNCIÓN FINAL PARA TEST
+# ===========================================
 
 def final_tamping_predictions(INFERENCE_FILE):
-    # Ejemplo de uso (solo para pruebas)
-    # Se recomienda usar un framework web como Flask o FastAPI para una API real.
-
-    # Simulación de carga de datos (reemplazar con tu propia lógica de carga)
-
     try:
-        # Esto solo funcionará si los archivos existen en la ruta relativa.
-        # En un entorno de API real, los datos vendrían de una petición (POST/PUT).
-        df_crudo_test = pd.read_csv(INFERENCE_FILE)
-        print(f"Iniciando API con datos de prueba: {df_crudo_test.shape[0]} filas.")
-
-        # Ejecutar la API
-        predictions = get_tamping_predictions(df_crudo_test)
-
-        # Imprimir o procesar la salida JSON
-        if isinstance(predictions, list):
-            return predictions  # Retorna el JSON para mandarlo con la API
-        else:
-            print(f"❌ Fallo en la API: {predictions.get('error')}")
-
-    except FileNotFoundError:
-        print(
-            f"❌ ERROR: Archivo de prueba no encontrado en {INFERENCE_FILE}. No se pudo simular la API."
-        )
+        df_raw = pd.read_csv(INFERENCE_FILE)
+        return get_tamping_predictions(df_raw)
     except Exception as e:
-        print(f"❌ ERROR Inesperado en la prueba de la API: {e}")
+        return {"error": str(e)}
