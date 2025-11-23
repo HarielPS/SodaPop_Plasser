@@ -24,10 +24,11 @@ model = torchvision.models.detection.fasterrcnn_resnet50_fpn(weights=None)
 num_classes = 2
 in_features = model.roi_heads.box_predictor.cls_score.in_features
 model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
+MODELO_FASTER_RCNN_PATH = BASE_DIR / "modelos" / "fasterrcnn_sleeper.pth"
 
 model.load_state_dict(
     torch.load(
-        "C:/Users/jlflo/Documents/Datasets/Rieles/Modelos/fasterrcnn_sleeper.pth",
+        MODELO_FASTER_RCNN_PATH
         map_location=device,
     )
 )
