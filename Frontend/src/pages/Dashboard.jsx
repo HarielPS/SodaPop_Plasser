@@ -5,6 +5,7 @@ import AlertsPanel from "../components/AlertsPanel/XAlertsPanel.jsx";
 import MachinesStatus from "../components/MachinesStatus/MachinesStatus.jsx";
 import ArrivalTimer from "../components/ArrivalTimer/ArrivalTimer.jsx";
 import KPIsPanel from "../components/KPIsPanel/KPIsPanel.jsx";
+import railwayData from '../resources/output_lifts.json';
 
 import styles from "./Dashboard.module.css";
 
@@ -17,7 +18,7 @@ export default function Dashboard() {
         <Header />
 
         <div className={styles.grid}>
-          <TrainMap />
+          <TrainMap railwayData={railwayData} />
           <AlertsPanel />
           <ArrivalTimer />
           <MachinesStatus />
