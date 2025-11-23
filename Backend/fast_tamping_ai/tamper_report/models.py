@@ -75,7 +75,8 @@ class Report(models.Model):
     end_latitude = models.FloatField()
     end_longitude = models.FloatField()
 
-    lift_mm = models.FloatField()
+    lift_left_mm = models.FloatField()
+    lift_right_mm = models.FloatField()
     adjustment_left_mm = models.FloatField()
     adjustment_right_mm = models.FloatField()
 

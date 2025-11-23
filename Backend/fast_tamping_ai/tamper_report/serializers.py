@@ -58,7 +58,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         fields = [
             "start_latitude", "start_longitude",
             "end_latitude", "end_longitude",
-            "lift_mm",
+            "lift_left_mm", "lift_right_mm",
             "adjustment_left_mm", "adjustment_right_mm",
             "state",
         ]

@@ -208,4 +208,5 @@ __marimo__/
 
 Dataset/
 vision-env/
+backend-env/
 .pth

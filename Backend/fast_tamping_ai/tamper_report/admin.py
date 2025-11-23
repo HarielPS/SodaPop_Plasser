@@ -41,7 +41,8 @@ class TrainTripAdmin(admin.ModelAdmin):
 class ReportAdmin(admin.ModelAdmin):
     list_display = (
         "report_batch",
-        "lift_mm",
+        "lift_left_mm",
+        "lift_right_mm",
         "adjustment_left_mm",
         "adjustment_right_mm",
         "state",
